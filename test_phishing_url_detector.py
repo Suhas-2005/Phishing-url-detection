@@ -1,13 +1,18 @@
 import unittest
 
-from phishing_url_detector import PhishingURLDetector, extract_url_features
+from phishing_url_detector import (
+    FEATURE_COUNT,
+    PhishingURLDetector,
+    SUSPICIOUS_KEYWORDS_FEATURE_INDEX,
+    extract_url_features,
+)
 
 
 class TestPhishingURLDetector(unittest.TestCase):
     def test_extract_url_features_flags_suspicious_url(self):
         features = extract_url_features("http://verify-account-update.example.com/login")
-        self.assertEqual(len(features), 9)
-        self.assertEqual(features[6], 1.0)
+        self.assertEqual(len(features), FEATURE_COUNT)
+        self.assertEqual(features[SUSPICIOUS_KEYWORDS_FEATURE_INDEX], 1.0)
 
     def test_train_and_predict(self):
         urls = [
@@ -24,6 +29,14 @@ class TestPhishingURLDetector(unittest.TestCase):
 
         batch = detector.predict_batch(["https://www.openai.com", "http://tinyurl.com/free-prize"])
         self.assertEqual(len(batch), 2)
+
+    def test_train_rejects_invalid_input_lengths(self):
+        with self.assertRaises(ValueError):
+            PhishingURLDetector.train(["https://example.com"], [0, 1])
+
+    def test_train_rejects_too_few_samples(self):
+        with self.assertRaises(ValueError):
+            PhishingURLDetector.train(["https://example.com"], [0])
 
 
 if __name__ == "__main__":

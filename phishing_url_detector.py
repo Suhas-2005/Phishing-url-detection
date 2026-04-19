@@ -17,6 +17,16 @@ SHORTENERS = (
     "ow.ly",
     "buff.ly",
 )
+SUSPICIOUS_KEYWORDS_FEATURE_INDEX = 6
+MODEL_RANDOM_STATE = 42
+SUBDOMAIN_THRESHOLD = 2
+FEATURE_COUNT = 9
+
+
+def _normalize_url(url: str) -> str:
+    if re.match(r"^[a-zA-Z]+://", url):
+        return url
+    return f"http://{url}"
 
 
 @dataclass
@@ -31,7 +41,7 @@ class PhishingURLDetector:
             raise ValueError("at least two samples are required for training")
 
         features = [extract_url_features(url) for url in urls]
-        model = GradientBoostingClassifier(random_state=42)
+        model = GradientBoostingClassifier(random_state=MODEL_RANDOM_STATE)
         model.fit(features, labels)
         return cls(model=model)
 
@@ -44,13 +54,13 @@ class PhishingURLDetector:
 
 
 def extract_url_features(url: str) -> List[float]:
-    parsed = urlparse(url if re.match(r"^[a-zA-Z]+://", url) else f"http://{url}")
+    parsed = urlparse(_normalize_url(url))
     hostname = (parsed.hostname or "").lower()
     path = (parsed.path or "").lower()
     query = (parsed.query or "").lower()
     full = f"{hostname}{path}{query}"
 
-    return [
+    features = [
         float(len(url)),
         float(sum(ch.isdigit() for ch in url)),
         float(url.count(".")),
@@ -58,9 +68,14 @@ def extract_url_features(url: str) -> List[float]:
         float("@" in url),
         float(url.startswith("https://")),
         float(any(keyword in full for keyword in SUSPICIOUS_KEYWORDS)),
-        float(hostname.count(".") > 2),
+        float(hostname.count(".") > SUBDOMAIN_THRESHOLD),
         float(any(hostname.endswith(shortener) for shortener in SHORTENERS)),
     ]
+    if len(features) != FEATURE_COUNT:
+        raise RuntimeError(
+            f"Feature count mismatch: expected {FEATURE_COUNT}, got {len(features)}"
+        )
+    return features
 
 
 if __name__ == "__main__":
