@@ -24,9 +24,13 @@ FEATURE_COUNT = 9
 
 
 def _normalize_url(url: str) -> str:
-    if re.match(r"^[a-zA-Z]+://", url):
-        return url
-    return f"http://{url}"
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("url must be a non-empty string")
+    normalized = url if re.match(r"^[a-zA-Z]+://", url) else f"http://{url}"
+    parsed = urlparse(normalized)
+    if not parsed.hostname:
+        raise ValueError("url must include a valid hostname")
+    return normalized
 
 
 @dataclass

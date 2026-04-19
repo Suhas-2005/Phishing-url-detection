@@ -26,6 +26,7 @@ class TestPhishingURLDetector(unittest.TestCase):
         detector = PhishingURLDetector.train(urls, labels)
         pred = detector.predict("http://verify-bank-account.example.com/login")
         self.assertIn(pred, [0, 1])
+        self.assertEqual(detector.predict_batch(urls), labels)
 
         batch = detector.predict_batch(["https://www.openai.com", "http://tinyurl.com/free-prize"])
         self.assertEqual(len(batch), 2)
@@ -37,6 +38,10 @@ class TestPhishingURLDetector(unittest.TestCase):
     def test_train_rejects_too_few_samples(self):
         with self.assertRaises(ValueError):
             PhishingURLDetector.train(["https://example.com"], [0])
+
+    def test_extract_url_features_rejects_invalid_url(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("")
 
 
 if __name__ == "__main__":
