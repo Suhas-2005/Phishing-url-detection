@@ -58,19 +58,20 @@ class PhishingURLDetector:
 
 
 def extract_url_features(url: str) -> List[float]:
-    parsed = urlparse(_normalize_url(url))
+    normalized = _normalize_url(url)
+    parsed = urlparse(normalized)
     hostname = (parsed.hostname or "").lower()
     path = (parsed.path or "").lower()
     query = (parsed.query or "").lower()
     full = f"{hostname}{path}{query}"
 
     features = [
-        float(len(url)),
-        float(sum(ch.isdigit() for ch in url)),
-        float(url.count(".")),
-        float(url.count("-")),
-        float("@" in url),
-        float(url.startswith("https://")),
+        float(len(normalized)),
+        float(sum(ch.isdigit() for ch in normalized)),
+        float(normalized.count(".")),
+        float(normalized.count("-")),
+        float("@" in normalized),
+        float(normalized.startswith("https://")),
         float(any(keyword in full for keyword in SUSPICIOUS_KEYWORDS)),
         float(hostname.count(".") > SUBDOMAIN_THRESHOLD),
         float(any(hostname.endswith(shortener) for shortener in SHORTENERS)),

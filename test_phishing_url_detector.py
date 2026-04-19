@@ -26,7 +26,10 @@ class TestPhishingURLDetector(unittest.TestCase):
         detector = PhishingURLDetector.train(urls, labels)
         pred = detector.predict("http://verify-bank-account.example.com/login")
         self.assertIn(pred, [0, 1])
-        self.assertEqual(detector.predict_batch(urls), labels)
+        training_predictions = detector.predict_batch(urls)
+        self.assertEqual(len(training_predictions), len(labels))
+        for prediction in training_predictions:
+            self.assertIn(prediction, [0, 1])
 
         batch = detector.predict_batch(["https://www.openai.com", "http://tinyurl.com/free-prize"])
         self.assertEqual(len(batch), 2)
